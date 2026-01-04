@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
-import { ArrowRight, CheckCircle, Lightbulb, ListTodo } from 'lucide-react';
+import { ArrowRight, CheckCircle, Lightbulb, ListTodo, UserPlus, LogIn } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function LandingPage() {
@@ -15,9 +15,15 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-1 items-center justify-end space-x-2">
             <ThemeToggle />
+            <Button asChild variant="ghost">
+              <Link href="/login">
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+              </Link>
+            </Button>
             <Button asChild>
-              <Link href="/dashboard">
-                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+              <Link href="/signup">
+                Sign Up <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
@@ -36,7 +42,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/dashboard">
+                <Link href="/signup">
                   Get Started for Free
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
