@@ -1,0 +1,70 @@
+diff --git a/node_modules/next-themes/dist/index.js b/node_modules/next-themes/dist/index.js
+index 9b936a5..e58a2d1 100644
+--- a/node_modules/next-themes/dist/index.js
++++ b/node_modules/next-themes/dist/index.js
+@@ -1,5 +1,5 @@
+ 'use client';
+-"use strict";
++
+ Object.defineProperty(exports, "__esModule", {
+     value: true
+ });
+@@ -62,10 +62,11 @@ var ThemeProvider = function(props) {
+         forcedTheme, enableSystem = true, disableTransitionOnChange = false, enableColorScheme = true, storageKey = "theme", themes = defaultThemes, defaultTheme = enableSystem ? "system" : "light", attribute = "data-theme", value, children,  } = props;
+     const [theme, setThemeState] = React.useState(()=>getTheme(storageKey, defaultTheme));
+     const [resolvedTheme, setResolvedTheme] = React.useState(()=>getTheme(storageKey));
++    const [mounted, setMounted] = React.useState(false);
+     const attrs = !value ? themes : Object.values(value);
+     const handleMediaQuery = React.useCallback((e)=>{
+         const systemTheme = getSystemTheme(e);
+-        setResolvedTheme(systemTheme);
++        if (theme === 'system') setResolvedTheme(systemTheme);
+     }, [
+         theme
+     ]);
+@@ -107,6 +108,10 @@ var ThemeProvider = function(props) {
+             setThemeState(theme);
+         }
+     }, [
++        theme
++    ]);
++    React.useEffect(()=>{
++        setMounted(true);
+         theme
+     ]);
+     const providerValue = React.useMemo(()=>({
+@@ -118,12 +123,17 @@ var ThemeProvider = function(props) {
+         setTheme: setTheme,
+         themes: themes
+     }), [
+-        theme,
+-        resolvedTheme,
+-        forcedTheme,
+-        setTheme,
+-        themes
++        mounted ? theme : undefined,
++        mounted ? resolvedTheme : undefined,
++        mounted ? forcedTheme : undefined,
++        setTheme,
++        themes, 
+     ]);
++    // This is what prevents the flash of incorrect theme,
++    // null is not a valid theme, so it will not render anything
++    if (!mounted) {
++        return /*#__PURE__*/ React.createElement(React.Fragment, null, null);
++    }
+     return /*#__PURE__*/ React.createElement(ThemeContext.Provider, {
+         value: providerValue
+     }, /*#__PURE__*/ React.createElement(Value, {
+diff --git a/node_modules/next-themes/package.json b/node_modules/next-themes/package.json
+index 3b069bd..d305574 100644
+--- a/node_modules/next-themes/package.json
++++ b/node_modules/next-themes/package.json
+@@ -34,7 +34,7 @@
+   "peerDependencies": {
+     "next": ">=9",
+     "react": "^16.8 || ^17 || ^18",
+     "react-dom": "^16.8 || ^17 || ^18"
+   },
+   "peerDependenciesMeta": {
+     "next": {

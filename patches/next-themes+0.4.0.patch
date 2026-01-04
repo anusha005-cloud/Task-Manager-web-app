@@ -1,0 +1,534 @@
+diff --git a/node_modules/next-themes/package.json b/node_modules/next-themes/package.json
+index 5815374..b523b10 100644
+--- a/node_modules/next-themes/package.json
++++ b/node_modules/next-themes/package.json
+@@ -46,7 +46,7 @@
+     "access": "public"
+   },
+   "peerDependencies": {
+-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
++    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+   },
+   "dependencies": {
+diff --git a/node_modules/next-themes/dist/index.js b/node_modules/next-themes/dist/index.js
+index 7233f2a..c5e80b2 100644
+--- a/node_modules/next-themes/dist/index.js
++++ b/node_modules/next-themes/dist/index.js
+@@ -1,11 +1,11 @@
+ 'use client';
+-"use strict";
+ var __create = Object.create;
+ var __defProp = Object.defineProperty;
+ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+ var __getOwnPropNames = Object.getOwnPropertyNames;
+ var __getProtoOf = Object.getPrototypeOf;
+ var __hasOwnProp = Object.prototype.hasOwnProperty;
++
+ var __export = (target, all) => {
+   for (var name in all)
+     __defProp(target, name, { get: all[name], enumerable: true });
+@@ -16,6 +16,7 @@
+     for (let from in __copyProps)
+       if (__hasOwnProp.call(from, key) && !__hasOwnProp.call(to, key))
+         __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
++
+   return to;
+ };
+ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+@@ -29,20 +30,22 @@
+   }
+   return target;
+ ));
++
+ __export(exports, {
+   ThemeProvider: () => ThemeProvider,
+   useTheme: () => useTheme
+ });
+-var React = __toESM(require("react"));
++var React = __toESM(require("react"), 1);
++const $React = React;
+ var import_react = require("react");
+ const colorSchemes = ["light", "dark"];
+ const MEDIA = "(prefers-color-scheme: dark)";
+ const ThemeContext = (0, import_react.createContext)(void 0);
+ const useTheme = () => (0, import_react.useContext)(ThemeContext);
+ const defaultThemes = ["light", "dark", "system"];
+-const ThemeProvider = (props) => {
+-  const {
++const ThemeProvider = (props)=>{
++    const {
+     children,
+     forcedTheme,
+     storageKey = "theme",
+@@ -62,76 +65,76 @@
+     value = Object.fromEntries(Object.entries(value || {}).map(([key, theme])=>[
+             key,
+             typeof theme === "string" ? {
+-              light: theme,
+-              dark: theme
+-            } : theme
+-          ]));
++                light: theme,
++                dark: theme
++            } : theme
++        ]));
+   }
+   const [theme, setThemeState] = (0, import_react.useState)(()=>getTheme(storageKey, defaultTheme));
+   const [resolvedTheme, setResolvedTheme] = (0, import_react.useState)(()=>getTheme(storageKey));
+-  const attrs = !value ? themes : Object.values(value).map((t) => t.light);
+-  const applyTheme = (0, import_react.useCallback)((theme2) => {
+-    let resolved = theme2;
++    const attrs = !value ? themes : Object.values(value).map((t)=>t.light);
++  const applyTheme = (0, import_react.useCallback)((theme2)=>{
++        let resolved = theme2;
+     if (!resolved)
+-      return;
++ return;
+     if (theme2 === "system") {
+       resolved = getSystemTheme();
+     }
+     const name = value ? value[resolved] : resolved;
+-    const d = document.documentElement;
++        const d = document.documentElement;
+     if (attribute === "class") {
+       d.classList.remove(...attrs);
+       if (name)
+-        d.classList.add(...(typeof name === "string" ? [name] : name));
++ d.classList.add(...typeof name === "string" ? [
++            name
++        ] : name);
+     } else {
+-      if (name) {
+-        d.setAttribute(attribute, typeof name === "string" ? name : name.light);
++            if (name) {
++                d.setAttribute(attribute, typeof name === "string" ? name : name.light);
+       } else {
+         d.removeAttribute(attribute);
+       }
+     }
+-  }, [attrs, attribute, value]);
++  }, [
++        attrs,
++        attribute,
++        value
++    ]);
+   const setTheme = (0, import_react.useCallback)((theme2) => {
+     setThemeState(theme2);
+     try {
+       localStorage.setItem(storageKey, theme2);
+     } catch (e) {
+-    }
+-  }, [storageKey]);
+-  const handleMediaQuery = (0, import_react.useCallback)((e) => {
+-    const resolved = getSystemTheme(e);
++    // Unsupported
++    }
++  }, [
++        storageKey
++    ]);
++  const handleMediaQuery = (0, import_react.useCallback)((e)=>{
++        const resolved = getSystemTheme(e);
+     setResolvedTheme(resolved);
+     if (theme === "system")
+-      applyTheme("system");
+-  }, [theme, applyTheme]);
+-  (0, import_react.useEffect)(() => {
+-    const media = window.matchMedia(MEDIA);
++ applyTheme("system");
++  }, [
++        theme,
++        applyTheme
++    ]);
++  (0, $React.useEffect)(()=>{
++        const media = window.matchMedia(MEDIA);
+     media.addEventListener("change", handleMediaQuery);
+     handleMediaQuery(media);
+     return () => media.removeEventListener("change", handleMediaQuery);
+   }, [
+-    handleMediaQuery
+-  ]);
+-  (0, import_react.useEffect)(() => {
++        handleMediaQuery
++    ]);
++  (0, $React.useEffect)(()=>{
+     applyTheme(forcedTheme ?? theme);
+   }, [
+-    forcedTheme,
+-    theme,
+-    applyTheme
+-  ]);
++        forcedTheme,
++        theme,
++        applyTheme
++    ]);
+   const providerValue = (0, import_react.useMemo)(
+-    () => ({
+-      theme,
+-      setTheme,
+-      forcedTheme,
+-      resolvedTheme: forcedTheme ?? resolvedTheme ?? theme,
+-      themes: enableSystem ? [...themes, "system"] : themes,
+-      systemTheme: resolvedTheme
+-    }),
+-    [theme, setTheme, forcedTheme, resolvedTheme, enableSystem, themes]
++    ()=>({
++            theme,
++            setTheme,
++            forcedTheme,
++            resolvedTheme: forcedTheme ?? resolvedTheme ?? theme,
++            themes: enableSystem ? [
++                ...themes,
++                "system"
++            ] : themes,
++            systemTheme: resolvedTheme
++        }),
++    [
++        theme,
++        setTheme,
++        forcedTheme,
++        resolvedTheme,
++        enableSystem,
++        themes
++    ]
+   );
+-  return /* @__PURE__ */ React.createElement(ThemeContext.Provider, { value: providerValue }, /* @__PURE__ */ React.createElement(ThemeScript, {
+-    ...{
+-      forcedTheme,
+-      storageKey,
+-      attribute,
+-      enableSystem,
+-      defaultTheme,
+-      value,
+-      themes,
+-      attrs
+-    }
+-  }), children);
++  return /* @__PURE__ */ React.createElement(ThemeContext.Provider, {
++    value: providerValue,
++    children: [
++      /* @__PURE__ */ React.createElement(ThemeScript, {
++        ...{
++          forcedTheme,
++          storageKey,
++          attribute,
++          enableSystem,
++          defaultTheme,
++          value,
++          themes,
++          attrs
++        },
++        key: "them-script"
++      }),
++      children
++    ]
++  });
+ };
+-const ThemeScript = (0, import_react.memo)(
+-  ({
+-    forcedTheme,
+-    storageKey,
+-    attribute,
+-    enableSystem,
+-    defaultTheme,
+-    value,
+-    themes,
+-    attrs
+-  }) => {
+-    const [isClient, setIsClient] = (0, import_react.useState)(false);
+-    (0, import_react.useEffect)(() => {
+-      setIsClient(true);
+-    }, []);
++const ThemeScript = (0, import_react.memo)(({ forcedTheme , storageKey , attribute , enableSystem , defaultTheme , value , themes , attrs  })=>{
+     const script = forcedTheme ? void 0 : attribute === "class" ? `!function(){var e,t,a=document.documentElement,n=${JSON.stringify(attrs)};a.classList.remove(...n);var l=localStorage.getItem("${storageKey}");e=l,t="system"===e||!e&&${!defaultTheme},t&&(e=window.matchMedia("${MEDIA}").matches?"dark":"light");var o=${JSON.stringify(value)};e&&o?a.classList.add(...o[e].split(" ")):e&&a.classList.add(e)}()` : `!function(){try{var e=localStorage.getItem("${storageKey}");if("system"===e||!e&&${!defaultTheme}){var t="${MEDIA}",a=window.matchMedia(t);if(a.matches){document.documentElement.setAttribute("${attribute}","dark")}else{document.documentElement.setAttribute("${attribute}","light")}}else if(e){var o=${JSON.stringify(value)};o[e]?document.documentElement.setAttribute("${attribute}",o[e]):document.documentElement.setAttribute("${attribute}",e)}}catch(e){}}()`;
+-    return isClient ? null : /* @__PURE__ */ React.createElement("script", {
+-      suppressHydrationWarning: true,
+-      dangerouslySetInnerHTML: {
+-        __html: script
+-      }
+-    });
+-  },
+-  (prevProps, nextProps) => {
+-    if (prevProps.forcedTheme)
+-      return true;
+-    return false;
+-  }
+-);
++    return /* @__PURE__ */ React.createElement("script", {
++        suppressHydrationWarning: true,
++        dangerouslySetInnerHTML: {
++            __html: script
++        }
++    });
++}, (prevProps, nextProps)=>{
++    if (prevProps.forcedTheme) return true;
++    return false;
++});
+ const getTheme = (key, fallback) => {
+   if (typeof window === "undefined")
+     return void 0;
+@@ -148,4 +151,3 @@
+     return "light";
+ };
+ //# sourceMappingURL=index.js.map
+-
+diff --git a/node_modules/next-themes/dist/index.mjs b/node_modules/next-themes/dist/index.mjs
+index 9e924d5..e18bc05 100644
+--- a/node_modules/next-themes/dist/index.mjs
++++ b/node_modules/next-themes/dist/index.mjs
+@@ -1,7 +1,8 @@
+ 'use client';
+-import * as React from "react";
+-import { createContext, useContext, useState, useCallback, useEffect, useMemo, memo } from "react";
++import * as React from "react";
++const $React = React;
++import { createContext, useContext, useState, useCallback, useMemo, memo, useEffect } from "react";
+ const colorSchemes = ["light", "dark"];
+ const MEDIA = "(prefers-color-scheme: dark)";
+ const ThemeContext = createContext(void 0);
+ const useTheme = () => useContext(ThemeContext);
+ const defaultThemes = ["light", "dark", "system"];
+-const ThemeProvider = (props) => {
+-  const {
++const ThemeProvider = (props)=>{
++    const {
+     children,
+     forcedTheme,
+     storageKey = "theme",
+@@ -21,76 +22,76 @@
+     value = Object.fromEntries(Object.entries(value || {}).map(([key, theme])=>[
+             key,
+             typeof theme === "string" ? {
+-              light: theme,
+-              dark: theme
+-            } : theme
+-          ]));
++                light: theme,
++                dark: theme
++            } : theme
++        ]));
+   }
+   const [theme, setThemeState] = useState(()=>getTheme(storageKey, defaultTheme));
+   const [resolvedTheme, setResolvedTheme] = useState(()=>getTheme(storageKey));
+-  const attrs = !value ? themes : Object.values(value).map((t) => t.light);
+-  const applyTheme = useCallback((theme2) => {
+-    let resolved = theme2;
++    const attrs = !value ? themes : Object.values(value).map((t)=>t.light);
++  const applyTheme = useCallback((theme2)=>{
++        let resolved = theme2;
+     if (!resolved)
+-      return;
++ return;
+     if (theme2 === "system") {
+       resolved = getSystemTheme();
+     }
+     const name = value ? value[resolved] : resolved;
+-    const d = document.documentElement;
++        const d = document.documentElement;
+     if (attribute === "class") {
+       d.classList.remove(...attrs);
+       if (name)
+-        d.classList.add(...(typeof name === "string" ? [name] : name));
++ d.classList.add(...typeof name === "string" ? [
++            name
++        ] : name);
+     } else {
+-      if (name) {
+-        d.setAttribute(attribute, typeof name === "string" ? name : name.light);
++            if (name) {
++                d.setAttribute(attribute, typeof name === "string" ? name : name.light);
+       } else {
+         d.removeAttribute(attribute);
+       }
+     }
+-  }, [attrs, attribute, value]);
++  }, [
++        attrs,
++        attribute,
++        value
++    ]);
+   const setTheme = useCallback((theme2) => {
+     setThemeState(theme2);
+     try {
+       localStorage.setItem(storageKey, theme2);
+     } catch (e) {
+-    }
+-  }, [storageKey]);
+-  const handleMediaQuery = useCallback((e) => {
+-    const resolved = getSystemTheme(e);
++    // Unsupported
++    }
++  }, [
++        storageKey
++    ]);
++  const handleMediaQuery = useCallback((e)=>{
++        const resolved = getSystemTheme(e);
+     setResolvedTheme(resolved);
+     if (theme === "system")
+-      applyTheme("system");
+-  }, [theme, applyTheme]);
+-  useEffect(() => {
+-    const media = window.matchMedia(MEDIA);
++ applyTheme("system");
++  }, [
++        theme,
++        applyTheme
++    ]);
++  _useEffect(()=>{
++        const media = window.matchMedia(MEDIA);
+     media.addEventListener("change", handleMediaQuery);
+     handleMediaQuery(media);
+     return () => media.removeEventListener("change", handleMediaQuery);
+   }, [
+-    handleMediaQuery
+-  ]);
+-  useEffect(() => {
++        handleMediaQuery
++    ]);
++  _useEffect(()=>{
+     applyTheme(forcedTheme ?? theme);
+   }, [
+-    forcedTheme,
+-    theme,
+-    applyTheme
+-  ]);
++        forcedTheme,
++        theme,
++        applyTheme
++    ]);
+   const providerValue = useMemo(
+-    () => ({
+-      theme,
+-      setTheme,
+-      forcedTheme,
+-      resolvedTheme: forcedTheme ?? resolvedTheme ?? theme,
+-      themes: enableSystem ? [...themes, "system"] : themes,
+-      systemTheme: resolvedTheme
+-    }),
+-    [theme, setTheme, forcedTheme, resolvedTheme, enableSystem, themes]
++    ()=>({
++            theme,
++            setTheme,
++            forcedTheme,
++            resolvedTheme: forcedTheme ?? resolvedTheme ?? theme,
++            themes: enableSystem ? [
++                ...themes,
++                "system"
++            ] : themes,
++            systemTheme: resolvedTheme
++        }),
++    [
++        theme,
++        setTheme,
++        forcedTheme,
++        resolvedTheme,
++        enableSystem,
++        themes
++    ]
+   );
+-  return /* @__PURE__ */ React.createElement(ThemeContext.Provider, { value: providerValue }, /* @__PURE__ */ React.createElement(ThemeScript, {
+-    ...{
+-      forcedTheme,
+-      storageKey,
+-      attribute,
+-      enableSystem,
+-      defaultTheme,
+-      value,
+-      themes,
+-      attrs
+-    }
+-  }), children);
++  return /* @__PURE__ */ React.createElement(ThemeContext.Provider, {
++    value: providerValue,
++    children: [
++      /* @__PURE__ */ React.createElement(ThemeScript, {
++        ...{
++          forcedTheme,
++          storageKey,
++          attribute,
++          enableSystem,
++          defaultTheme,
++          value,
++          themes,
++          attrs
++        },
++        key: "them-script"
++      }),
++      children
++    ]
++  });
+ };
+-const ThemeScript = memo(
+-  ({
+-    forcedTheme,
+-    storageKey,
+-    attribute,
+-    enableSystem,
+-    defaultTheme,
+-    value,
+-    themes,
+-    attrs
+-  }) => {
+-    const [isClient, setIsClient] = useState(false);
+-    useEffect(() => {
+-      setIsClient(true);
+-    }, []);
++var _useEffect = useEffect;
++const ThemeScript = memo(({ forcedTheme , storageKey , attribute , enableSystem , defaultTheme , value , themes , attrs  })=>{
+     const script = forcedTheme ? void 0 : attribute === "class" ? `!function(){var e,t,a=document.documentElement,n=${JSON.stringify(attrs)};a.classList.remove(...n);var l=localStorage.getItem("${storageKey}");e=l,t="system"===e||!e&&${!defaultTheme},t&&(e=window.matchMedia("${MEDIA}").matches?"dark":"light");var o=${JSON.stringify(value)};e&&o?a.classList.add(...o[e].split(" ")):e&&a.classList.add(e)}()` : `!function(){try{var e=localStorage.getItem("${storageKey}");if("system"===e||!e&&${!defaultTheme}){var t="${MEDIA}",a=window.matchMedia(t);if(a.matches){document.documentElement.setAttribute("${attribute}","dark")}else{document.documentElement.setAttribute("${attribute}","light")}}else if(e){var o=${JSON.stringify(value)};o[e]?document.documentElement.setAttribute("${attribute}",o[e]):document.documentElement.setAttribute("${attribute}",e)}}catch(e){}}()`;
+-    return isClient ? null : /* @__PURE__ */ React.createElement("script", {
+-      suppressHydrationWarning: true,
+-      dangerouslySetInnerHTML: {
+-        __html: script
+-      }
+-    });
+-  },
+-  (prevProps, nextProps) => {
+-    if (prevProps.forcedTheme)
+-      return true;
+-    return false;
+-  }
+-);
++    return /* @__PURE__ */ React.createElement("script", {
++        suppressHydrationWarning: true,
++        dangerouslySetInnerHTML: {
++            __html: script
++        }
++    });
++}, (prevProps, nextProps)=>{
++    if (prevProps.forcedTheme) return true;
++    return false;
++});
+ const getTheme = (key, fallback) => {
+   if (typeof window === "undefined")
+     return void 0;
+diff --git a/node_modules/next-themes/dist/types.d.ts b/node_modules/next-themes/dist/types.d.ts
+index e86e339..2487405 100644
+--- a/node_modules/next-themes/dist/types.d.ts
++++ b/node_modules/next-themes/dist/types.d.ts
+@@ -1,5 +1,5 @@
+-import type { ReactNode, Dispatch, SetStateAction } from 'react';
+-export interface ThemeProviderProps {
++import type { ReactNode, Dispatch, SetStateAction, ReactElement } from 'react';
++export interface ThemeProviderProps<T = string> {
+     /** List of all available theme names */
+     themes?: string[];
+     /** Forced theme name for the current page */
+@@ -14,7 +14,7 @@
+     enableSystem?: boolean;
+     /** Disable all CSS transitions when switching themes */
+     disableTransitionOnChange?: boolean;
+-    /** Theme mapping,
++    /** Theme mapping, `value` must be an object of themes */
+      * e.g. `value={{ light: 'light-theme', dark: 'dark-theme' }}`
+      */
+     value?: {
+@@ -22,7 +22,7 @@
+     };
+     /** Nonce passed to the inline script for CSP, if applicable */
+     nonce?: string;
+-    children: ReactNode;
++    children: ReactNode | ReactElement;
+ }
+ export interface UseThemeProps {
+     /** List of all available theme names */

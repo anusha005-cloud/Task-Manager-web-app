@@ -1,0 +1,145 @@
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import Link from 'next/link';
+import { Plus, ListTodo, CheckCircle2, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TaskForm } from "@/components/tasks/TaskForm";
+import TaskList from "@/components/tasks/TaskList";
+import { type Task, type TaskCategory } from "@/lib/types";
+import { initialTasks } from "@/lib/initial-tasks";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Logo } from "@/components/Logo";
+
+type FilterType = TaskCategory | "all";
+
+export default function DashboardPage() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [filter, setFilter] = useState<FilterType>("all");
+
+  useEffect(() => {
+    // In a real app, you might fetch tasks from an API here.
+    // For now, we load initial tasks and sort them.
+    const sortedTasks = [...initialTasks].sort(
+      (a, b) => Number(a.completed) - Number(b.completed)
+    );
+    setTasks(sortedTasks);
+  }, []);
+  
+  const sortTasks = (tasks: Task[]) => {
+    return [...tasks].sort((a, b) => Number(a.completed) - Number(b.completed));
+  }
+
+  const handleTaskCreated = (newTask: Task) => {
+    setTasks(prevTasks => sortTasks([newTask, ...prevTasks]));
+    setIsFormOpen(false);
+  };
+
+  const handleToggleComplete = (taskId: string) => {
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.map((task) =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
+      );
+      return sortTasks(updatedTasks);
+    });
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+  };
+
+  const filteredTasks = useMemo(() => {
+    if (filter === "all") {
+      return tasks;
+    }
+    return tasks.filter((task) => task.category === filter);
+  }, [tasks, filter]);
+  
+  const completedTasksCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
+
+  return (
+    <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+      <div className="flex flex-col min-h-screen bg-background">
+        <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container flex h-16 items-center">
+            <div className="mr-4 flex items-center gap-2">
+              <Logo />
+              <h1 className="text-xl font-bold font-headline">TaskFlow</h1>
+            </div>
+             <Button variant="ghost" size="sm" asChild className="mr-auto">
+                <Link href="/">
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                </Link>
+            </Button>
+            <div className="flex flex-1 items-center justify-end space-x-2">
+              <ThemeToggle />
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> New Task
+                </Button>
+              </DialogTrigger>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="flex flex-col space-y-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-3xl font-bold tracking-tight font-headline">Your Tasks</h2>
+                 <div className="flex items-center text-muted-foreground space-x-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <span>{completedTasksCount} / {tasks.length} completed</span>
+                </div>
+            </div>
+            <Tabs
+              defaultValue="all"
+              onValueChange={(value) => setFilter(value as FilterType)}
+            >
+              <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="work">Work</TabsTrigger>
+                <TabsTrigger value="home">Home</TabsTrigger>
+              </TabsList>
+              <TabsContent value="all">
+                <TaskList
+                  tasks={filteredTasks}
+                  onToggleComplete={handleToggleComplete}
+                  onDeleteTask={handleDeleteTask}
+                />
+              </TabsContent>
+              <TabsContent value="work">
+                <TaskList
+                  tasks={filteredTasks}
+                  onToggleComplete={handleToggleComplete}
+                  onDeleteTask={handleDeleteTask}
+                />
+              </TabsContent>
+              <TabsContent value="home">
+                <TaskList
+                  tasks={filteredTasks}
+                  onToggleComplete={handleToggleComplete}
+                  onDeleteTask={handleDeleteTask}
+                />
+              </TabsContent>
+            </Tabs>
+
+            {filteredTasks.length === 0 && (
+                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 p-12 text-center">
+                    <ListTodo className="h-12 w-12 text-muted-foreground/50" />
+                    <h3 className="mt-4 text-lg font-semibold text-muted-foreground">No tasks here!</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Click "New Task" to get started.
+                    </p>
+                </div>
+            )}
+          </div>
+        </main>
+      </div>
+      <TaskForm onTaskCreated={handleTaskCreated} />
+    </Dialog>
+  );
+}
