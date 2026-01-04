@@ -5,7 +5,7 @@ import TaskItem from "./TaskItem";
 
 interface TaskListProps {
     tasks: Task[];
-    onToggleComplete: (taskId: string) => void;
+    onToggleComplete: (taskId: string, completed: boolean) => void;
     onDeleteTask: (taskId: string) => void;
 }
 

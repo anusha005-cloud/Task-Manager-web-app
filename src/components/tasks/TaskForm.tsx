@@ -49,7 +49,7 @@ const TaskFormSchema = z.object({
 type TaskFormValues = z.infer<typeof TaskFormSchema>;
 
 interface TaskFormProps {
-  onTaskCreated: (newTask: Task) => void;
+  onTaskCreated: (newTask: Omit<Task, 'id' | 'userId'>) => void;
 }
 
 export function TaskForm({ onTaskCreated }: TaskFormProps) {
@@ -66,21 +66,21 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
 
   const onSubmit = (data: TaskFormValues) => {
     startTransition(async () => {
-      const result = await createTaskAction(data);
-      if (result.success) {
-        onTaskCreated(result.data);
-        form.reset();
-        toast({
-          title: "Task Created",
-          description: "Your new task has been added successfully.",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: result.error,
-        });
-      }
+        const result = await createTaskAction(data);
+        if (result.success) {
+            onTaskCreated(result.data);
+            form.reset();
+            toast({
+                title: "Task Created",
+                description: "Your new task has been added successfully.",
+            });
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: result.error,
+            });
+        }
     });
   };
 

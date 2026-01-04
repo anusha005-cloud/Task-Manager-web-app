@@ -13,7 +13,7 @@ const CreateTaskSchema = z.object({
 
 type CreateTaskValues = z.infer<typeof CreateTaskSchema>;
 
-export async function createTaskAction(values: CreateTaskValues): Promise<{ success: true; data: Task } | { success: false; error: string }> {
+export async function createTaskAction(values: CreateTaskValues): Promise<{ success: true; data: Omit<Task, 'id' | 'userId'> } | { success: false; error: string }> {
   const validatedFields = CreateTaskSchema.safeParse(values);
 
   if (!validatedFields.success) {
@@ -26,8 +26,7 @@ export async function createTaskAction(values: CreateTaskValues): Promise<{ succ
   const { description, difficulty, dueDate, category } = validatedFields.data;
 
   try {
-    const newTask: Task = {
-      id: crypto.randomUUID(),
+    const newTask: Omit<Task, 'id' | 'userId'> = {
       description,
       difficulty,
       dueDate,

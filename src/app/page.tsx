@@ -1,10 +1,21 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
-import { ArrowRight, CheckCircle, Lightbulb, ListTodo, UserPlus, LogIn } from 'lucide-react';
+import { ArrowRight, CheckCircle, Lightbulb, ListTodo, UserPlus, LogIn, LogOut } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useUser } from '@/firebase';
+import { getAuth, signOut } from 'firebase/auth';
 
 export default function LandingPage() {
+  const { user, isUserLoading } = useUser();
+  const auth = getAuth();
+
+  const handleLogout = () => {
+    signOut(auth);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -15,17 +26,38 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-1 items-center justify-end space-x-2">
             <ThemeToggle />
-            <Button asChild variant="ghost">
-              <Link href="/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                Login
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/signup">
-                Sign Up <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            {isUserLoading ? (
+              <Button variant="ghost" disabled>
+                Loading...
+              </Button>
+            ) : user ? (
+              <>
+                <Button asChild>
+                  <Link href="/dashboard">
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button variant="ghost" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="ghost">
+                  <Link href="/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/signup">
+                    Sign Up <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -42,7 +74,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/signup">
+                <Link href={user ? "/dashboard" : "/signup"}>
                   Get Started for Free
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>

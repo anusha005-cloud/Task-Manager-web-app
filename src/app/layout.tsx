@@ -3,6 +3,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import './globals.css';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'TaskFlow',
@@ -23,7 +24,9 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased", 'font-body')}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+          <FirebaseClientProvider>
+            {children}
+          </FirebaseClientProvider>
           <Toaster />
         </ThemeProvider>
       </body>

@@ -3,6 +3,7 @@ export type TaskCategory = "work" | "home";
 
 export type Task = {
   id: string;
+  userId: string;
   description: string;
   dueDate: Date | null;
   difficulty: TaskDifficulty;

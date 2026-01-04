@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +27,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
+import { FirebaseError } from 'firebase/app';
 
 const LoginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -37,6 +40,15 @@ type LoginValues = z.infer<typeof LoginSchema>;
 export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const router = useRouter();
+  const auth = useAuth();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(LoginSchema),
@@ -47,13 +59,31 @@ export default function LoginPage() {
   });
 
   const onSubmit = (values: LoginValues) => {
-    startTransition(() => {
-      // NOTE: Firebase login logic will be added here later.
-      console.log(values);
-      toast({
-        title: 'Login Submitted (Not Implemented)',
-        description: 'This is a placeholder. No actual login has occurred.',
-      });
+    startTransition(async () => {
+      try {
+        initiateEmailSignIn(auth, values.email, values.password);
+      } catch (error) {
+        let description = 'An unexpected error occurred.';
+        if (error instanceof FirebaseError) {
+          switch (error.code) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+              description = 'Invalid email or password.';
+              break;
+            case 'auth/invalid-email':
+              description = 'Please enter a valid email address.';
+              break;
+            default:
+              description = 'Failed to sign in. Please try again.';
+              break;
+          }
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Sign In Failed',
+          description,
+        });
+      }
     });
   };
 

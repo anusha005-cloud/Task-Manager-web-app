@@ -14,14 +14,14 @@ import * as React from 'react';
 
 interface TaskItemProps extends React.HTMLAttributes<HTMLDivElement> {
     task: Task;
-    onToggleComplete: (taskId: string) => void;
+    onToggleComplete: (taskId: string, completed: boolean) => void;
     onDeleteTask: (taskId: string) => void;
 }
 
 export default function TaskItem({ task, onToggleComplete, onDeleteTask, className, ...props }: TaskItemProps) {
 
     const dueDateText = task.dueDate ? formatDistanceToNow(task.dueDate, { addSuffix: true }) : 'No due date';
-    const isOverdue = task.dueDate ? isPast(task.dueDate) && !task.completed : false;
+    const isOverdue = task.dueDate ? isPast(new Date(task.dueDate)) && !task.completed : false;
 
     return (
         <Card
@@ -38,7 +38,7 @@ export default function TaskItem({ task, onToggleComplete, onDeleteTask, classNa
                     <Checkbox
                         id={`task-${task.id}`}
                         checked={task.completed}
-                        onCheckedChange={() => onToggleComplete(task.id)}
+                        onCheckedChange={() => onToggleComplete(task.id, task.completed)}
                         aria-label={`Mark task as ${task.completed ? 'incomplete' : 'complete'}`}
                     />
                 </div>
@@ -57,7 +57,7 @@ export default function TaskItem({ task, onToggleComplete, onDeleteTask, classNa
                         <div className="flex items-center gap-1.5">
                             <Calendar className="h-4 w-4" />
                             <span className={cn(isOverdue && "text-destructive font-medium")}>
-                                {task.dueDate ? format(task.dueDate, "MMM d, yyyy") : "No date"}
+                                {task.dueDate ? format(new Date(task.dueDate), "MMM d, yyyy") : "No date"}
                             </span>
                         </div>
                         <Badge

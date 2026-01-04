@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useState, useTransition } from 'react';
-
+import { useState, useTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { doc, setDoc } from 'firebase/firestore';
+import { useAuth, useUser, useFirestore, initiateEmailSignUp } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -26,6 +28,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useToast } from '@/hooks/use-toast';
+import { FirebaseError } from 'firebase/app';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const SignUpSchema = z
   .object({
@@ -43,6 +47,16 @@ type SignUpValues = z.infer<typeof SignUpSchema>;
 export default function SignUpPage() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const router = useRouter();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   const form = useForm<SignUpValues>({
     resolver: zodResolver(SignUpSchema),
@@ -54,13 +68,43 @@ export default function SignUpPage() {
   });
 
   const onSubmit = (values: SignUpValues) => {
-    startTransition(() => {
-      // NOTE: Firebase sign-up logic will be added here later.
-      console.log(values);
-      toast({
-        title: 'Sign Up Submitted (Not Implemented)',
-        description: 'This is a placeholder. Your account has not been created.',
-      });
+    startTransition(async () => {
+      try {
+        const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
+        
+        if (userCredential && userCredential.user) {
+          const userRef = doc(firestore, 'users', userCredential.user.uid);
+          setDocumentNonBlocking(userRef, {
+            id: userCredential.user.uid,
+            email: values.email,
+            theme: 'system',
+          }, { merge: true });
+        }
+
+      } catch (error) {
+        let description = 'An unexpected error occurred.';
+        if (error instanceof FirebaseError) {
+          switch (error.code) {
+            case 'auth/email-already-in-use':
+              description = 'This email is already associated with an account.';
+              break;
+            case 'auth/invalid-email':
+              description = 'Please enter a valid email address.';
+              break;
+            case 'auth/weak-password':
+              description = 'The password is too weak. Please choose a stronger password.';
+              break;
+            default:
+              description = 'Failed to create an account. Please try again.';
+              break;
+          }
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Sign Up Failed',
+          description,
+        });
+      }
     });
   };
 

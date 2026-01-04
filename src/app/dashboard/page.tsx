@@ -1,8 +1,10 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
 import Link from 'next/link';
-import { Plus, ListTodo, CheckCircle2, Home } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, ListTodo, CheckCircle2, Home, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,53 +14,84 @@ import { type Task, type TaskCategory } from "@/lib/types";
 import { initialTasks } from "@/lib/initial-tasks";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Logo } from "@/components/Logo";
+import { useUser, useAuth, useFirestore } from "@/firebase";
+import { collection, doc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { signOut } from 'firebase/auth';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+
 
 type FilterType = TaskCategory | "all";
 
 export default function DashboardPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const router = useRouter();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
 
+  const tasksCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'tasks');
+  }, [firestore, user]);
+
+  const { data: tasks, isLoading: areTasksLoading } = useCollection<Task>(tasksCollection);
+
   useEffect(() => {
-    // In a real app, you might fetch tasks from an API here.
-    // For now, we load initial tasks and sort them.
-    const sortedTasks = [...initialTasks].sort(
-      (a, b) => Number(a.completed) - Number(b.completed)
-    );
-    setTasks(sortedTasks);
-  }, []);
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
   
   const sortTasks = (tasks: Task[]) => {
     return [...tasks].sort((a, b) => Number(a.completed) - Number(b.completed));
   }
 
-  const handleTaskCreated = (newTask: Task) => {
-    setTasks(prevTasks => sortTasks([newTask, ...prevTasks]));
+  const handleTaskCreated = (newTask: Omit<Task, 'id' | 'userId'>) => {
+    if (!user) return;
+    const taskWithUser: Omit<Task, 'id'> = { ...newTask, userId: user.uid };
+    const newDocRef = doc(collection(firestore, 'users', user.uid, 'tasks'));
+    addDocumentNonBlocking(tasksCollection!, { ...taskWithUser, id: newDocRef.id });
     setIsFormOpen(false);
   };
 
-  const handleToggleComplete = (taskId: string) => {
-    setTasks(prevTasks => {
-      const updatedTasks = prevTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      );
-      return sortTasks(updatedTasks);
-    });
+  const handleToggleComplete = (taskId: string, completed: boolean) => {
+    if (!user) return;
+    const taskRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
+    setDocumentNonBlocking(taskRef, { completed: !completed }, { merge: true });
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    if (!user) return;
+    const taskRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
+    deleteDocumentNonBlocking(taskRef);
   };
+
+  const handleLogout = () => {
+    signOut(auth);
+  };
+
+  const sortedTasks = useMemo(() => tasks ? sortTasks(tasks) : [], [tasks]);
 
   const filteredTasks = useMemo(() => {
     if (filter === "all") {
-      return tasks;
+      return sortedTasks;
     }
-    return tasks.filter((task) => task.category === filter);
-  }, [tasks, filter]);
+    return sortedTasks.filter((task) => task.category === filter);
+  }, [sortedTasks, filter]);
   
-  const completedTasksCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
+  const completedTasksCount = useMemo(() => tasks?.filter(t => t.completed).length ?? 0, [tasks]);
+
+  if (isUserLoading || areTasksLoading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="text-2xl">Loading...</div>
+        </div>
+    )
+  }
 
   return (
     <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -69,12 +102,18 @@ export default function DashboardPage() {
               <Logo />
               <h1 className="text-xl font-bold font-headline">TaskFlow</h1>
             </div>
-             <Button variant="ghost" size="sm" asChild className="mr-auto">
-                <Link href="/">
-                    <Home className="mr-2 h-4 w-4" />
-                    Home
-                </Link>
-            </Button>
+             <nav className="flex items-center space-x-4 lg:space-x-6 mr-auto">
+                 <Button variant="ghost" size="sm" asChild>
+                    <Link href="/">
+                        <Home className="mr-2 h-4 w-4" />
+                        Home
+                    </Link>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                </Button>
+            </nav>
             <div className="flex flex-1 items-center justify-end space-x-2">
               <ThemeToggle />
               <DialogTrigger asChild>
@@ -92,7 +131,7 @@ export default function DashboardPage() {
                 <h2 className="text-3xl font-bold tracking-tight font-headline">Your Tasks</h2>
                  <div className="flex items-center text-muted-foreground space-x-2">
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span>{completedTasksCount} / {tasks.length} completed</span>
+                    <span>{completedTasksCount} / {tasks?.length ?? 0} completed</span>
                 </div>
             </div>
             <Tabs
