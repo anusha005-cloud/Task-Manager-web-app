@@ -14,7 +14,7 @@ import { type Task, type TaskCategory } from "@/lib/types";
 import { initialTasks } from "@/lib/initial-tasks";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Logo } from "@/components/Logo";
-import { useUser, useAuth, useFirestore } from "@/firebase";
+import { useUser, useAuth, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, doc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { signOut } from 'firebase/auth';
@@ -51,10 +51,10 @@ export default function DashboardPage() {
   }
 
   const handleTaskCreated = (newTask: Omit<Task, 'id' | 'userId'>) => {
-    if (!user) return;
+    if (!user || !tasksCollection) return;
     const taskWithUser: Omit<Task, 'id'> = { ...newTask, userId: user.uid };
-    const newDocRef = doc(collection(firestore, 'users', user.uid, 'tasks'));
-    addDocumentNonBlocking(tasksCollection!, { ...taskWithUser, id: newDocRef.id });
+    const newDocRef = doc(tasksCollection);
+    addDocumentNonBlocking(tasksCollection, { ...taskWithUser, id: newDocRef.id });
     setIsFormOpen(false);
   };
 
